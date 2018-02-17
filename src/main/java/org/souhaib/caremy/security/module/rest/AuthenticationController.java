@@ -3,21 +3,27 @@ package org.souhaib.caremy.security.module.rest;
 import org.souhaib.caremy.api.module.model.User;
 import org.souhaib.caremy.api.module.service.UserService;
 import org.souhaib.caremy.security.module.common.DeviceProvider;
+import org.souhaib.caremy.security.module.model.UserRequest;
 import org.souhaib.caremy.security.module.model.UserTokenState;
 import org.souhaib.caremy.security.module.security.TokenHelper;
 import org.souhaib.caremy.security.module.security.auth.JwtAuthenticationRequest;
 import org.souhaib.caremy.security.module.service.CustomUserDetailsService;
+import org.souhaib.caremy.utility.module.exception.ResourceConflictException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mobile.device.Device;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -51,27 +57,43 @@ public class AuthenticationController {
             @RequestBody JwtAuthenticationRequest authenticationRequest, Device device) throws AuthenticationException, IOException {
 
 
-        System.out.println(device.getDevicePlatform());
-
-        // Perform the security
+    try {
         final Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         authenticationRequest.getUsername(),
                         authenticationRequest.getPassword()
                 )
         );
-
-
-        // Inject into security context
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        // token creation
         User user = (User) authentication.getPrincipal();
         String jws = tokenHelper.generateToken(user.getUsername(), device);
         int expiresIn = tokenHelper.getExpiredIn(device);
-        // Return the token
         return ResponseEntity.ok(new UserTokenState(jws, expiresIn));
+    }catch (BadCredentialsException e){
+        return ResponseEntity.notFound().build();
     }
+
+
+    }
+
+
+
+    @RequestMapping(method = RequestMethod.POST, value = "/signup")
+    public ResponseEntity<?> addUser(@RequestBody UserRequest userRequest,
+                                     UriComponentsBuilder ucBuilder) {
+
+        User existUser = this.userService.findByUsername(userRequest.getUsername());
+        if (existUser != null) {
+            throw new ResourceConflictException(userRequest.getId(), "Username already exists");
+        }
+        User user = this.userService.save(userRequest);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setLocation(ucBuilder.path("/api/user/{userId}").buildAndExpand(user.getId()).toUri());
+        return new ResponseEntity<User>(user, HttpStatus.CREATED);
+    }
+
+
+
 
     @RequestMapping(value = "/refresh", method = RequestMethod.POST)
     public ResponseEntity<?> refreshAuthenticationToken(
