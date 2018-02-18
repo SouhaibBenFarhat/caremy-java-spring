@@ -17,14 +17,19 @@ public class PresenceChannelInterceptor extends ChannelInterceptorAdapter {
         StompHeaderAccessor sha = StompHeaderAccessor.wrap(message);
 
         // ignore non-STOMP messages like heartbeat messages
-        if(sha.getCommand() == null) {
+        if (sha.getCommand() == null) {
             return;
         }
+        if (sha.getNativeHeader("user") != null) {
+            System.out.println(sha.getNativeHeader("user").get(0));
+            System.out.println(sha.getNativeHeader("Authorization").get(0));
+
+        }
+
 
         String sessionId = sha.getSessionId();
 
-
-        switch(sha.getCommand()) {
+        switch (sha.getCommand()) {
             case CONNECT:
                 logger.debug("STOMP Connect [sessionId: " + sessionId + "]");
                 System.out.println("NEW CONNECTION");
@@ -37,9 +42,14 @@ public class PresenceChannelInterceptor extends ChannelInterceptorAdapter {
                 logger.debug("STOMP Disconnect [sessionId: " + sessionId + "]");
                 System.out.println("DISCONNECTION");
                 break;
+            case SEND:
+                System.out.println("CLIENT IS SENDING DATA");
+                break;
             default:
                 break;
 
         }
     }
+
+
 }

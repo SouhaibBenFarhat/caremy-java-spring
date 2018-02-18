@@ -14,7 +14,7 @@ import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 public class WebSocketConfig extends AbstractWebSocketMessageBrokerConfigurer {
 
     @Bean
-    public PresenceChannelInterceptor presenceChannelInterceptor(){
+    public PresenceChannelInterceptor presenceChannelInterceptor() {
         return new PresenceChannelInterceptor();
     }
 
@@ -30,6 +30,7 @@ public class WebSocketConfig extends AbstractWebSocketMessageBrokerConfigurer {
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         registry.setApplicationDestinationPrefixes("/app")
                 .enableSimpleBroker("/chat");
+
     }
 
     @Override
@@ -41,4 +42,6 @@ public class WebSocketConfig extends AbstractWebSocketMessageBrokerConfigurer {
     public void configureClientOutboundChannel(ChannelRegistration registration) {
         registration.interceptors(presenceChannelInterceptor());
     }
+
+
 }
