@@ -45,6 +45,10 @@ public class PresenceChannelInterceptor extends ChannelInterceptorAdapter {
             case SEND:
                 System.out.println("CLIENT IS SENDING DATA");
                 break;
+            case SUBSCRIBE:
+                System.out.println("CLIENT IS SUBSCRIBING");
+                System.out.println(sha.getNativeHeader("Authorization").get(0));
+
             default:
                 break;
 
